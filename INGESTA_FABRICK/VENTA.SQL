@@ -2,7 +2,7 @@ WITH v AS (
   SELECT
     TRY_TO_DATE(TO_VARCHAR(idFeContabilizacion), 'YYYYMMDD') AS fecha
   FROM STAGING_PE_CH.SQL_FABRIC.VENTA
-  WHERE idFeContabilizacion = 20251009 --AND 20251231
+  WHERE idFeContabilizacion = 20251015 --AND 20251231
 )
 SELECT
   TO_CHAR(DATE_TRUNC('MONTH', fecha), 'YYYYMM') AS periodo,
@@ -12,14 +12,24 @@ WHERE fecha IS NOT NULL
 GROUP BY 1
 ORDER BY 1;
 
+select distinct idFeContabilizacion from STAGING_PE_CH.SQL_FABRIC.VENTA
+order by idFeContabilizacion desc
+;
+
+select count (*) from STAGING_PE_CH.SQL_FABRIC.VENTA
+where idFeContabilizacion = 20251020
+;
+
 SELECT *
 FROM TABLE(UTILS.COALESCE.TEST_REGISTROS_ANALYSIS(
   '"PROD_BRONZE"."COMERCIAL"."STG_VENTA"', 
-  'FECARGA', 
+  'IDFECONTABILIZACION', 
   6 
 ))
+;
 
-; 
+
+
 
 
 
