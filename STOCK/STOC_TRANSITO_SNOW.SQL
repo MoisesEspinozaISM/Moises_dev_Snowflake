@@ -23,7 +23,7 @@ WITH
       mseg.MENGE AS cantidad,
       mseg.CHARG AS lote,
       mkpf.BUDAT AS fecha_documento,
-      TRIM(mara.XCHPF) AS es_lote, -- 'X' si maneja lote
+      mara.XCHPF AS es_lote, -- 'X' si maneja lote
       /* ===== Flags de calidad ===== */
       CASE
         WHEN mseg.BWART IN ('641', '351', '313', '303')
@@ -38,7 +38,7 @@ WITH
       END AS flag_incoherencia_signo,
       /* Exigir CHARG solo si el material es batch-managed */
       CASE
-        WHEN TRIM(mara.XCHPF) = 'X'
+        WHEN mara.XCHPF = 'X'
         AND (
           mseg.CHARG IS NULL
           OR mseg.CHARG = ''
@@ -58,12 +58,12 @@ WITH
         ELSE 0
       END AS qty_efecto
     FROM
-      SAPPRD.MSEG AS mseg
-      INNER JOIN SAPPRD.MKPF AS mkpf ON mseg.MANDT = mkpf.MANDT
+      STAGING_RD_HT_GT.SAP.MSEG AS mseg
+      INNER JOIN STAGING_RD_HT_GT.SAP.MKPF AS mkpf ON mseg.MANDT = mkpf.MANDT
       AND mseg.MBLNR = mkpf.MBLNR
       AND mseg.MJAHR = mkpf.MJAHR
-      INNER JOIN SAPPRD.MARA AS mara ON mara.MATNR = mseg.MATNR
-      LEFT JOIN SAPPRD.MAKT AS makt ON makt.MATNR = mseg.MATNR
+      INNER JOIN STAGING_RD_HT_GT.SAP.MARA AS mara ON mara.MATNR = mseg.MATNR
+      LEFT JOIN STAGING_RD_HT_GT.SAP.MAKT AS makt ON makt.MATNR = mseg.MATNR
       AND makt.SPRAS = 'S'
     WHERE
       mara.MTART = 'ZFER' -- producto terminado
@@ -87,7 +87,7 @@ WITH
       )
       /* Exigir lote solo si corresponde */
       AND (
-        TRIM(mara.XCHPF) <> 'X'
+        mara.XCHPF <> 'X'
         OR (
           mseg.CHARG IS NOT NULL
           AND mseg.CHARG <> ''
@@ -147,7 +147,7 @@ WITH
       COALESCE(MAX(t006.ANDEC), 3) AS decimales_uom
     FROM
       movimientos m
-      LEFT JOIN SAPPRD.T006 t006 ON t006.MSEHI = m.unidad_medida
+      LEFT JOIN STAGING_RD_HT_GT.SAP.T006 t006 ON t006.MSEHI = m.unidad_medida
     WHERE
       flag_incoherencia_signo = 0
     GROUP BY
@@ -197,13 +197,13 @@ SELECT
     ELSE 'SIN MOVIMIENTOS'
   END AS estado_transito,
   /* Extras de control / auditoría */
-  --a.flag_incoherencia_signo,
-  --a.flag_lote_faltante,
-  --a.flag_mismo_dia_cierre,
-  --a.decimales_uom
+  a.flag_incoherencia_signo,
+  a.flag_lote_faltante,
+  a.flag_mismo_dia_cierre,
+  a.decimales_uom
 FROM
   agrupado a
-  LEFT JOIN SAPPRD.T001 t001 ON t001.BUKRS = a.id_sociedad
+  LEFT JOIN STAGING_RD_HT_GT.SAP.T001 t001 ON t001.BUKRS = a.id_sociedad
   /* Solo pendientes reales y recientes */
 WHERE
   (
